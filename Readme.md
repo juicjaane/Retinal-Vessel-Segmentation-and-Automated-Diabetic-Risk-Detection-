@@ -1,6 +1,16 @@
 # Retinal Vessel Segmentation and Automated Diabetic Risk Detection
 
-![Enhancement Comparison](Images/enhancement_comparison.png)
+## 👋 Welcome
+
+Welcome to the **Retinal Vessel Segmentation and Automated Diabetic Risk Detection** repository.
+
+We are delighted to present this comprehensive research project, which stands at the intersection of **Medical Imaging** and **Artificial Intelligence**. This repository is designed to provide researchers, developers, and medical professionals with a transparent, in-depth, and reproducible framework for automated retinal analysis.
+
+Whether you are here to explore traditional computer vision algorithms for vessel extraction or to investigate state-of-the-art deep learning models for disease classification, we hope this documentation serves as a valuable resource in your journey.
+
+To get started immediately, please refer to the [Implementation & Usage](#-implementation--usage) section.
+
+---
 
 ## 🧾 Executive Summary
 
@@ -68,6 +78,11 @@ The green channel is extracted from the RGB image as it provides the highest con
 #### 1.3 Noise Reduction
 *   **Non-Local Means Denoising**: A sophisticated technique that averages pixels based on the similarity of their surrounding patches, effectively removing noise while preserving fine vessel structures.
 ![Non-local Means](Images/non_local_means.png)
+
+
+![Enhancement Comparison](Images/enhancement_comparison.png)
+
+
 
 ### 2. Vessel Detection Methodology
 
