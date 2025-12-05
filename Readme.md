@@ -1,203 +1,157 @@
-# Vessel Extraction in Retinal Fundus Images 
+# Retinal Vessel Segmentation and Automated Diabetic Risk Detection
 
-This project focuses on the extraction of retinal blood vessels from fundus images using traditional image processing techniques. The goal is to enhance the visibility and segmentation of blood vessels without relying on deep learning methods. These techniques are crucial for aiding the diagnosis of diabetic retinopathy and other retinal diseases.
+![Enhancement Comparison](Images/enhancement_comparison.png)
+
+## 🧾 Executive Summary
+
+This project presents a comprehensive framework for the automated analysis of retinal fundus images, addressing two critical diagnostic challenges: **Retinal Vessel Segmentation** and **Diabetic Retinopathy Risk Detection**. 
+
+By integrating traditional **Computer Vision** techniques (Signal Processing, Morphological Operations) with modern **Deep Learning** architectures (Transfer Learning with VGG16), this system provides a robust tool for enhancing vessel visibility and classifying disease risk. The project is architected with modularity in mind, separating core logic into reusable Python modules for scalability.
 
 ---
 
 ## 📌 Table of Contents
-- [Project Overview](#project-overview)
-- [Methodology](#methodology)
-- [Features](#features)
-- [Results](#results)
-- [Requirements](#requirements)
-- [How to Run](#how-to-run)
-- [Folder Structure](#folder-structure)
-- [Sample Outputs](#sample-outputs)
-- [Contributors](#contributors)
+- [Key Features](#-key-features)
+- [Technical Architecture](#-technical-architecture)
+- [Part 1: Vessel Segmentation (Image Processing)](#part-1-vessel-segmentation-image-processing)
+- [Part 2: Diabetic Risk Detection (Deep Learning)](#part-2-diabetic-risk-detection-deep-learning)
+- [Implementation & Usage](#-implementation--usage)
+- [Results & Performance](#-results--performance)
+- [References](#-references)
 
 ---
 
-## 🧾 Project Overview
+## 🚀 Key Features
 
-This work focuses on the **enhancement and segmentation** of blood vessels from colored retinal fundus images. The main tasks include:
-- Enhancing the green channel using **CLAHE (Contrast Limited Adaptive Histogram Equalization)**.
-- Applying **matched filtering** for vessel detection.
-- Performing **multiscale gradient computation and edge detection** using the **Canny operator**.
-- Comparing various image enhancement and filtering techniques using **PSNR**, **SSIM**, and histograms.
+*   **Hybrid Approach**: Combines the interpretability of traditional image processing with the predictive power of Deep Learning.
+*   **Advanced Preprocessing**: Implements a custom pipeline including Green Channel Extraction, CLAHE, and Non-Local Means Denoising.
+*   **Robust Segmentation**: Utilizes Gabor Matched Filtering and Adaptive Thresholding for precise vessel extraction without the need for labeled training masks.
+*   **Automated Classification**: Deploys a VGG16-based classifier with a custom head for high-accuracy diabetic risk detection.
+*   **Modular Codebase**: Core algorithms are encapsulated in the `model/` directory for easy integration and testing.
 
-## Dataset
-The project uses the Retina Blood Vessel Segmentation Dataset from Kaggle, which contains:
-- High-resolution retinal fundus images
-- Binary mask annotations (vessel pixels marked as 1, background as 0)
-- Diverse range of retinal pathologies
-- Varying vessel widths and branching patterns
+---
 
-Dataset Link: [Retina Blood Vessel Dataset](https://www.kaggle.com/datasets/abdallahwagih/retina-blood-vessel)
+## 🏗 Technical Architecture
 
-## Methodology
+The project is structured to separate data processing, modeling, and evaluation:
 
-### 1. Image Preprocessing
-The preprocessing pipeline includes:
-- Color space conversion (RGB to grayscale)
-- Noise reduction
-- Contrast enhancement
+```
+├── model/                  # Core Logic Modules
+│   ├── preprocessing.py    # Image cropping, CLAHE, and enhancement functions
+│   ├── segmentation.py     # End-to-end vessel segmentation pipeline
+│   └── train_classifier.py # VGG16 training loop, augmentation, and evaluation
+├── Data/                   # Raw and processed data for segmentation
+├── datasets/               # Organized dataset for Classification (Normal/Disease)
+├── classification.ipynb    # Initial classification experiments
+├── final.ipynb             # Interactive vessel segmentation notebook
+└── ml_implementation.ipynb # Interactive Deep Learning notebook
+```
 
-### 2. Image Enhancement Techniques
-Various enhancement techniques were implemented and compared:
+---
 
-#### 2.1 Histogram-based Methods
-- **Histogram Equalization (HE)**
-  ![Histogram Equalization](Images/histogram_eq.png)
-  - Improves global contrast
-  - May over-enhance some regions
+## Part 1: Vessel Segmentation (Image Processing)
 
-- **Adaptive Histogram Equalization (AHE)**
-  ![Adaptive HE](Images/adaptive_he.png)
-  - Local contrast enhancement
-  - Better preservation of local details
+The segmentation module relies on the physiological property that blood vessels appear darker than the background in the green channel of the spectrum.
 
-- **Contrast Limited Adaptive Histogram Equalization (CLAHE)**
-  ![CLAHE](Images/clahe.png)
-  - Prevents over-amplification of noise
-  - Better control over enhancement
+### 1. Preprocessing Pipeline
 
-#### 2.2 Spatial Domain Methods
-- **Gamma Correction**
-  ![Gamma Correction](Images/gamma_correction.png)
-  - Non-linear transformation
-  - Adjusts image brightness
+#### 1.1 Green Channel Extraction
+The green channel is extracted from the RGB image as it provides the highest contrast between blood vessels and the background retina. The red channel is often saturated, and the blue channel is noisy.
+![RGB Channels](Images/rgb_channels.png)
 
-- **Unsharp Masking**
-  ![Unsharp Masking](Images/unsharp_masking.png)
-  - Edge enhancement
-  - Improves vessel visibility
+#### 1.2 Contrast Enhancement (CLAHE)
+**Contrast Limited Adaptive Histogram Equalization (CLAHE)** is applied to enhance local contrast. Unlike standard Histogram Equalization (HE) which operates globally, CLAHE operates on small regions (tiles) of the image.
+*   **Mechanism**: The image is divided into 8x8 tiles. Histogram equalization is performed on each tile.
+*   **Clip Limit (2.0)**: To prevent noise amplification in homogeneous areas, the histogram is clipped at a specific limit before equalization.
+![CLAHE](Images/clahe.png)
 
-#### 2.3 Frequency Domain Methods
-- **Laplacian Filtering**
-  ![Laplacian](Images/laplacian_filter.png)
-  - Edge detection
-  - Second-order derivative
-
-- **Log Transformation**
-  ![Log Transform](Images/log_transform.png)
-  - Compresses dynamic range
-  - Enhances dark regions
-
-- **Exponential Transformation**
-  ![Exponential Transform](Images/exp_transform.png)
-  - Expands dynamic range
-  - Enhances bright regions
-
-### 3. Vessel Detection
-Multiple approaches were implemented:
-
-#### 3.1 Matched Filtering
-![Matched Filtering](Images/matched_filtering.png)
-- Template matching approach
-- Detects vessel-like structures
-
-#### 3.2 Laplacian-based Detection
-![Laplacian Detection](Images/laplacian_detection.png)
-- Second-order derivative
-- Edge enhancement
-
-#### 3.3 Non-local Means Filtering
+#### 1.3 Noise Reduction
+*   **Non-Local Means Denoising**: A sophisticated technique that averages pixels based on the similarity of their surrounding patches, effectively removing noise while preserving fine vessel structures.
 ![Non-local Means](Images/non_local_means.png)
-- Noise reduction
-- Structure preservation
 
-#### 3.4 Adaptive Thresholding
+### 2. Vessel Detection Methodology
+
+#### 2.1 Matched Filtering (Gabor Filters)
+We employ **Gabor Filters** to detect tubular structures (vessels). A bank of Gabor kernels with varying orientations is convolved with the image. The filter response is maximal when the kernel aligns with a vessel segment, effectively highlighting the vascular network.
+![Matched Filtering](Images/matched_filtering.png)
+
+#### 2.2 Adaptive Thresholding
+To convert the enhanced grayscale image into a binary mask, we use **Adaptive Thresholding**. The threshold value is calculated dynamically for smaller regions, allowing the method to handle varying illumination conditions across the retina.
 ![Adaptive Threshold](Images/adaptive_threshold.png)
-- Local threshold computation
-- Better handling of varying illumination
-
-### 4. Performance Comparison
-![Enhancement Comparison](Images/enhancement_comparison.png)
-Comparison of different enhancement techniques showing their effects on vessel visibility and noise levels.
-
-## Performance Metrics
-The project uses several evaluation metrics:
-1. IoU (Intersection over Union)
-2. Dice Coefficient
-3. Precision
-4. Recall
-5. Accuracy
-6. PSNR (Peak Signal-to-Noise Ratio)
-7. CII (Colorfulness Index Indicator)
-8. Entropy
-
-## Results
-The final approach combines:
-1. CLAHE for contrast enhancement
-2. Non-local means filtering for noise reduction
-3. Adaptive thresholding for vessel detection
-
-## Future Improvements
-1. Implementation of edge linking process
-2. Removal of corneal structure artifacts
-3. Image preprocessing to handle circumferential artifacts
-4. Improved mask positioning for better evaluation metrics
-
-## References
-1. Dai, Peishan, et al. "Retinal Fundus Image Enhancement Using the Normalized Convolution and Noise Removing." International Journal of Biomedical Imaging, 2016.
-2. T. Jintasuttisak and S. Intajag. "Color retinal image enhancement by Rayleigh contrast-limited adaptive histogram equalization." 2014.
-3. M.M. Fraz, et al. "Blood vessel segmentation methodologies in retinal images – A survey." Computer Methods and Programs in Biomedicine, 2012.
-4. A. W. Setiawan, et al. "Color retinal image enhancement using CLAHE." 2013.
-5. Peng Feng, et al. "Enhancing retinal image by the Contourlet transform." Pattern Recognition Letters, 2007.
-6. M. U. Akram, et al. "Retinal image blood vessel segmentation." 2009.
-7. M. Saleh Miri and A. Mahloojifar. "A comparison study to evaluate retinal image enhancement techniques." 2009.
-8. G. D. Joshi and J. Sivaswamy. "Colour Retinal Image Enhancement Based on Domain Knowledge." 2008.
-9. N. R. Binti Sabri and H. B. Yazid. "Image Enhancement Methods For Fundus Retina Images." 2018.
-10. A. Imran, et al. "Comparative Analysis of Vessel Segmentation Techniques in Retinal Images." IEEE Access, 2019.
-
-## Authors
-
-- Janeshvar Sivakumar 
-
-## Institution
-Sri Sivasubramaniya Nadar College of Engineering
-(An Autonomous Institution, Affiliated to Anna University)
-Kalavakkam – 603110
 
 ---
 
-## 📦 Requirements
+## Part 2: Diabetic Risk Detection (Deep Learning)
 
-### Python Dependencies
+For the classification task (Normal vs. Diabetic), the project utilizes **Transfer Learning** to leverage features learned from large-scale datasets (ImageNet).
+
+### 1. Data Pipeline
+*   **Black Border Removal**: A custom cropping function (`crop_image_from_gray` in `model/preprocessing.py`) removes the uninformative black borders around the fundus image, centering the region of interest.
+*   **Data Augmentation**: To improve model generalization, `ImageDataGenerator` applies:
+    *   Rotation (+/- 20 degrees)
+    *   Zoom (+/- 20%)
+    *   Horizontal Flip
+    *   Shift (Width/Height)
+
+### 2. Model Architecture: VGG16
+We utilize the **VGG16** architecture as a feature extractor.
+*   **Base**: VGG16 (weights frozen) extracts hierarchical features (edges, textures, shapes).
+*   **Custom Head**:
+    *   `GlobalAveragePooling2D`: Reduces spatial dimensions.
+    *   `Dense (128 units, ReLU)`: Learns specific features for diabetic retinopathy.
+    *   `Dropout (0.5)`: Regularization to prevent overfitting.
+    *   `Dense (Output, Softmax)`: Final classification layer.
+
+---
+
+## 💻 Implementation & Usage
+
+### Prerequisites
+*   Python 3.9+
+*   TensorFlow 2.8+
+*   OpenCV, NumPy, Matplotlib, Scikit-learn
+
+### 1. Running Vessel Segmentation
+To segment vessels from a single image using the standalone script:
+
 ```bash
-# Core Dependencies
-numpy>=1.21.0
-opencv-python>=4.5.0
-scikit-image>=0.18.0
-matplotlib>=3.4.0
-pandas>=1.3.0
-
-# Machine Learning Dependencies
-tensorflow>=2.8.0
-scikit-learn>=0.24.0
-
-# Jupyter Notebook Support
-jupyter>=1.0.0
-ipykernel>=6.0.0
+cd model
+python segmentation.py "path/to/your/image.jpg"
 ```
+*   **Output**: A binary mask `vessel_mask.jpg` will be saved in the current directory.
 
-### Installation
-```bash
-# Create a new conda environment (recommended)
-conda create -n retina python=3.9
-conda activate retina
+### 2. Training the Classifier
+To train the Deep Learning model on your dataset:
 
-# Install dependencies
-pip install -r requirements.txt
-```
+1.  Ensure your dataset is organized in `datasets/` (e.g., `datasets/normal/`, `datasets/diabetes/`).
+2.  Run the training script:
+    ```bash
+    cd model
+    python train_classifier.py
+    ```
+    *   **Process**: The script loads data, applies augmentation, trains the VGG16 model (with early stopping), and displays evaluation metrics.
+    *   **Output**: The trained model is saved as `diabetic_retinopathy_model.h5`.
 
-### Hardware Requirements
-- Minimum 8GB RAM
-- GPU with at least 4GB VRAM (recommended for faster processing)
-- 10GB free disk space for dataset and processing
+---
 
-### Dataset Requirements
-- Retina Blood Vessel Segmentation Dataset from Kaggle
-- Minimum image resolution: 224x224 pixels
-- Supported formats: PNG, JPG, JPEG
+## 📊 Results & Performance
 
+### Image Processing
+*   **Enhancement**: CLAHE significantly improves vessel contrast compared to standard Histogram Equalization.
+*   **Segmentation**: The combination of Gabor Filtering and Adaptive Thresholding successfully isolates the vascular network, even in the presence of noise.
+
+### Machine Learning
+*   **Accuracy**: The VGG16-based model achieves high accuracy in distinguishing Normal vs. Diabetic retinas.
+*   **Evaluation**: The training script generates a **Confusion Matrix** and **Classification Report** to verify performance across all classes.
+
+---
+
+## 📚 References
+1.  Dai, Peishan, et al. "Retinal Fundus Image Enhancement Using the Normalized Convolution and Noise Removing." International Journal of Biomedical Imaging, 2016.
+2.  M.M. Fraz, et al. "Blood vessel segmentation methodologies in retinal images – A survey." Computer Methods and Programs in Biomedicine, 2012.
+3.  Simonyan, K., & Zisserman, A. (2014). Very Deep Convolutional Networks for Large-Scale Image Recognition. arXiv preprint arXiv:1409.1556.
+
+---
+
+**Author**: Janeshvar Sivakumar
+**Institution**: Sri Sivasubramaniya Nadar College of Engineering
